@@ -103,8 +103,7 @@
 
 - (void)loadRomWithName: (NSString*) name
 {
-    NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString* documentsDirectoryPath = [paths objectAtIndex:0];
+    NSString* documentsDirectoryPath = [GLViewController documentsDirectoryPath];
     
     NSString* path = [NSString stringWithFormat:@"%@/%@", documentsDirectoryPath, name];
     
@@ -139,5 +138,31 @@
     
     [self.theEmulator draw];
 }
+
++(NSString *)documentsDirectoryPath
+{
+#ifdef JAILBREAK
+    
+    NSString *documentPath = @"/var/mobile/Media/ROMs/GAMEBOY";
+    NSDictionary *attrib = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInt:0775], NSFilePosixPermissions, nil];
+    
+    if (![[NSFileManager defaultManager] fileExistsAtPath:documentPath])
+    {
+        [[NSFileManager defaultManager] createDirectoryAtPath:documentPath
+                                  withIntermediateDirectories:YES
+                                                   attributes:attrib
+                                                        error:NULL];
+    }
+    
+    return documentPath;
+    
+#else
+    
+    NSArray *documentPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    return [documentPaths objectAtIndex:0];
+    
+#endif
+}
+
 
 @end

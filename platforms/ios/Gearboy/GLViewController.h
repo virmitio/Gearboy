@@ -21,11 +21,14 @@
 #import <GLKit/GLKit.h>
 #import "Emulator.h"
 
+#define JAILBREAK 1
+
 @interface GLViewController : GLKViewController
 
 @property (strong, nonatomic) EAGLContext* context;
 @property (strong, nonatomic) Emulator* theEmulator;
 
 - (void)loadRomWithName: (NSString*) path;
++(NSString *)documentsDirectoryPath;
 
 @end

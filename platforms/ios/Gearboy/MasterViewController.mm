@@ -43,21 +43,17 @@
 {
     [super viewDidLoad];
     
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    
     NSArray *files = nil;
     
-    if ([paths count] > 0)
-    {
-        NSFileManager *fileManager = [[NSFileManager alloc] init];
-        NSArray *dirContents = [fileManager contentsOfDirectoryAtPath:[paths objectAtIndex:0] error:nil];
+    NSFileManager *fileManager = [[NSFileManager alloc] init];
+    NSArray *dirContents = [fileManager contentsOfDirectoryAtPath:[GLViewController documentsDirectoryPath] error:nil];
         
-        if ([dirContents count] > 0)
-        {
-            NSArray *extensions = [NSArray arrayWithObjects:@"zip", @"gb", @"sgb", @"gbc", @"rom", @"ZIP", @"GB", @"SGB", @"GBC", @"ROM", nil];
-            files = [dirContents filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"pathExtension IN %@", extensions]];
-        }
+    if ([dirContents count] > 0)
+    {
+        NSArray *extensions = [NSArray arrayWithObjects:@"zip", @"gb", @"sgb", @"gbc", @"rom", @"ZIP", @"GB", @"SGB", @"GBC", @"ROM", nil];
+        files = [dirContents filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"pathExtension IN %@", extensions]];
     }
+    
     
     self.listData = files;    
     self.sections = [[NSMutableDictionary alloc] init];
