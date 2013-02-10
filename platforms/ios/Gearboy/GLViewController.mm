@@ -178,5 +178,4 @@
     view.context = self.context;
 }
 
-
 @end
