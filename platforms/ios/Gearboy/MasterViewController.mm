@@ -46,7 +46,7 @@
     NSArray *files = nil;
     
     NSFileManager *fileManager = [[NSFileManager alloc] init];
-    NSArray *dirContents = [fileManager contentsOfDirectoryAtPath:[GLViewController documentsDirectoryPath] error:nil];
+    NSArray *dirContents = [fileManager contentsOfDirectoryAtPath:@"/var/mobile/Media/ROMs/GAMEBOY" error:nil];
         
     if ([dirContents count] > 0)
     {
