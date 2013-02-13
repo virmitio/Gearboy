@@ -54,7 +54,6 @@
         files = [dirContents filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"pathExtension IN %@", extensions]];
     }
     
-    
     self.listData = files;    
     self.sections = [[NSMutableDictionary alloc] init];
     
