@@ -27,7 +27,7 @@ const float kGB_Height = 144.0f;
 const float kGB_TexWidth = kGB_Width / 256.0f;
 const float kGB_TexHeight = kGB_Height / 256.0f;
 const GLfloat box[] = {0.0f, kGB_Height, 1.0f, kGB_Width,kGB_Height, 1.0f, 0.0f, 0.0f, 1.0f, kGB_Width, 0.0f, 1.0f};
-const GLfloat tex[] = {0.0f, 0.0f, kGB_TexWidth, 0.0f, 0.0f, kGB_TexHeight, kGB_TexWidth, kGB_TexHeight};
+const GLfloat tex[] = {0.0f, kGB_TexHeight, kGB_TexWidth, kGB_TexHeight, 0.0f, 0.0f, kGB_TexWidth, 0.0f};
 const char* kSaveFolder = "/var/mobile/Library/Gearboy";
 
 @implementation Emulator
@@ -116,10 +116,8 @@ const char* kSaveFolder = "/var/mobile/Library/Gearboy";
 
 -(void)shutdownGL
 {
-    glDeleteTextures(1, &intermediateTexture);
     glDeleteTextures(1, &accumulationTexture);
     glDeleteTextures(1, &GBTexture);
-    glDeleteFramebuffers(1, &intermediateFramebuffer);
     glDeleteFramebuffers(1, &accumulationFramebuffer);
     initialized = NO;
 }
@@ -132,9 +130,11 @@ const char* kSaveFolder = "/var/mobile/Library/Gearboy";
     
     for (int y = 0; y < GAMEBOY_HEIGHT; ++y)
     {
+        int y_256 = y * 256;
+        int y_gb_width = y * GAMEBOY_WIDTH;
         for (int x = 0; x < GAMEBOY_WIDTH; ++x)
         {
-            theTexture[(y * 256) + x] = theFrameBuffer[(y * GAMEBOY_WIDTH) + x];
+            theTexture[y_256 + x] = theFrameBuffer[y_gb_width + x];
         }
     }
 }
@@ -161,9 +161,7 @@ const char* kSaveFolder = "/var/mobile/Library/Gearboy";
 {
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &iOSFrameBuffer);
     
-    glGenFramebuffers(1, &intermediateFramebuffer);
     glGenFramebuffers(1, &accumulationFramebuffer);
-    glGenTextures(1, &intermediateTexture);
     glGenTextures(1, &accumulationTexture);
     glGenTextures(1, &GBTexture);
     
@@ -179,11 +177,6 @@ const char* kSaveFolder = "/var/mobile/Library/Gearboy";
     glBindTexture(GL_TEXTURE_2D, GBTexture);
     [self setupTextureWithData: (GLvoid*) theTexture];
 
-    glBindFramebuffer(GL_FRAMEBUFFER, intermediateFramebuffer);
-    glBindTexture(GL_TEXTURE_2D, intermediateTexture);
-    [self setupTextureWithData: NULL];
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, intermediateTexture, 0);
-
     glBindFramebuffer(GL_FRAMEBUFFER, accumulationFramebuffer);
     glBindTexture(GL_TEXTURE_2D, accumulationTexture);
     [self setupTextureWithData: NULL];
@@ -195,35 +188,33 @@ const char* kSaveFolder = "/var/mobile/Library/Gearboy";
     glBindFramebuffer(GL_FRAMEBUFFER, iOSFrameBuffer);
     glBindTexture(GL_TEXTURE_2D, GBTexture);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*) theTexture);
-    [self renderQuadWithViewportWidth:(80 * multiplier) andHeight:(72 * multiplier)];
+    [self renderQuadWithViewportWidth:(80 * multiplier) andHeight:(72 * multiplier) andMirrorY:NO];
 }
 
 -(void)renderMixFrames
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, intermediateFramebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, accumulationFramebuffer);
     glBindTexture(GL_TEXTURE_2D, GBTexture);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*) theTexture);
-    [self renderQuadWithViewportWidth:GAMEBOY_WIDTH andHeight:GAMEBOY_HEIGHT];
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, accumulationFramebuffer);
-    glBindTexture(GL_TEXTURE_2D, intermediateTexture);   
+
     float alpha = kMixFrameAlpha;
     if (firstFrame)
     {
         firstFrame = NO;
         alpha = 1.0f;
     }
+    
     glEnable(GL_BLEND);
     glColor4f(1.0f, 1.0f, 1.0f, alpha);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    [self renderQuadWithViewportWidth:GAMEBOY_WIDTH andHeight:GAMEBOY_HEIGHT];
+    [self renderQuadWithViewportWidth:GAMEBOY_WIDTH andHeight:GAMEBOY_HEIGHT andMirrorY:NO];
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     glDisable(GL_BLEND);
 
     glBindFramebuffer(GL_FRAMEBUFFER, iOSFrameBuffer);
     glClear(GL_COLOR_BUFFER_BIT);
     glBindTexture(GL_TEXTURE_2D, accumulationTexture);
-    [self renderQuadWithViewportWidth:(80 * multiplier) andHeight:(72 * multiplier)];
+    [self renderQuadWithViewportWidth:(80 * multiplier) andHeight:(72 * multiplier) andMirrorY:YES];
 }
 
 -(void)setupTextureWithData: (GLvoid*) data
@@ -233,11 +224,14 @@ const char* kSaveFolder = "/var/mobile/Library/Gearboy";
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 
--(void)renderQuadWithViewportWidth: (int)viewportWidth andHeight: (int)viewportHeight
+-(void)renderQuadWithViewportWidth: (int)viewportWidth andHeight: (int)viewportHeight andMirrorY: (BOOL) mirrorY
 {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrthof(0.0f, kGB_Width, 0.0f, kGB_Height, -100.0f, 100.0f);
+    if (mirrorY)
+        glOrthof(0.0f, kGB_Width, 0.0f, kGB_Height, -1.0f, 1.0f);
+    else
+        glOrthof(0.0f, kGB_Width, kGB_Height, 0.0f, -1.0f, 1.0f);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glViewport(0, 0, viewportWidth, viewportHeight);
