@@ -6,11 +6,11 @@ Gearboy
 
 Gearboy is a Nintendo Game Boy / Game Boy Color emulator written in C++.
 
-The emulator is focused on readability of source code, but nevertheless it has good compatibility.
+The main focus of this emulator is readability of source code. Nevertheless, it has a high compatibility ratio.
 
-A lot of effort has gone into this in order to follow OOP and keep it as simple as possible.
+A lot of effort has gone into this in order to follow OOP and keep it as simple and efficient as possible.
 
-Don't forget to send me your comments or questions at: http://twitter.com/drhelius
+Don't forget sending me your comments or questions at: http://twitter.com/drhelius
 
 
 ----------
@@ -25,7 +25,7 @@ Downloads
 --------
 - Windows: [Gearboy-0.5-Windows.zip](http://www.geardome.com/files/gearboy/Gearboy-0.5-Windows.zip)
 - Linux: [Gearboy-0.5-Linux.tar.gz](http://www.geardome.com/files/gearboy/Gearboy-0.5-Linux.tar.gz)
-- iOS (for jailbroken devices use the jailbreak branch): [guide](http://jailbreakerra.blogspot.com.es/2013/01/build-app-with-xcode-project-files.html).
+- iOS: [Cydia](http://modmyi.com/info/gearboygameboy.d.php)
 
 Features
 --------
@@ -90,7 +90,7 @@ There is a nice Netbeans + Qt tutorial [here](http://netbeans.org/kb/docs/cnd/qt
 ### iOS
 - Install Xcode for Mac OS X. iOS SDK 5.1 or later is needed. 
 - Open the Gearboy Xcode project and build.
-- In order to run it on real hardware you will need an iOS developer certificate.
+- In order to run it on real hardware you will need an iOS developer certificate. For jailbroken devices use the jailbreak branch.
 
 ### Raspberry Pi - Raspbian
 - Install SDL development dependencies (<code>sudo apt-get install libsdl1.2-dev</code>).
