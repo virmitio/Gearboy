@@ -23,22 +23,16 @@
 #include <math.h>
 #include <assert.h>
 #include <unistd.h>
-#include <sys/time.h> 
+#include <sys/time.h>
+#include <SDL/SDL.h>
 #include "bcm_host.h"
 #include "GLES/gl.h"
 #include "EGL/egl.h"
 #include "EGL/eglext.h"
 #include "gearboy.h"
 
-struct Tex_Color
-{
-    u8 red;
-    u8 green;
-    u8 blue;
-};
-
-bool keys[256];
-bool terminate = false;
+bool running = true;
+bool paused = false;
 EGLDisplay display;
 EGLSurface surface;
 EGLContext context;
@@ -52,36 +46,110 @@ GLshort quadVerts[8];
 
 GearboyCore* theGearboyCore;
 GB_Color* theFrameBuffer;
-Tex_Color* theTexture;
 GLuint theGBTexture;
 
 uint32_t screen_width, screen_height;
 
-void draw(void)
+void update(void)
 {
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 144, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid*) theTexture);
+    SDL_Event keyevent;
+
+    while (SDL_PollEvent(&keyevent))
+    {
+        switch(keyevent.type)
+        {
+            case SDL_QUIT:
+            running = false;
+            break;
+            case SDL_KEYDOWN:
+            switch(keyevent.key.keysym.sym)
+            {
+                case SDLK_LEFT:
+                theGearboyCore->KeyPressed(Left_Key);
+                break;
+                case SDLK_RIGHT:
+                theGearboyCore->KeyPressed(Right_Key);
+                break;
+                case SDLK_UP:
+                theGearboyCore->KeyPressed(Up_Key);
+                break;
+                case SDLK_DOWN:
+                theGearboyCore->KeyPressed(Down_Key);
+                break;
+                case SDLK_a:
+                theGearboyCore->KeyPressed(B_Key);
+                break;
+                case SDLK_s:
+                theGearboyCore->KeyPressed(A_Key);
+                break;
+                case SDLK_p:
+                paused = !paused;
+                theGearboyCore->Pause(paused);
+                break;
+                case SDLK_SPACE:
+                theGearboyCore->KeyPressed(Select_Key);
+                break;
+                case SDLK_RETURN:
+                theGearboyCore->KeyPressed(Start_Key);
+                break;
+                case SDLK_ESCAPE:
+                running = false;
+                break;
+                default:
+                break;
+            }
+            break;
+            case SDL_KEYUP:
+            switch(keyevent.key.keysym.sym)
+            {
+                case SDLK_LEFT:
+                theGearboyCore->KeyReleased(Left_Key);
+                break;
+                case SDLK_RIGHT:
+                theGearboyCore->KeyReleased(Right_Key);
+                break;
+                case SDLK_UP:
+                theGearboyCore->KeyReleased(Up_Key);
+                break;
+                case SDLK_DOWN:
+                theGearboyCore->KeyReleased(Down_Key);
+                break;
+                case SDLK_a:
+                theGearboyCore->KeyReleased(B_Key);
+                break;
+                case SDLK_s:
+                theGearboyCore->KeyReleased(A_Key);
+                break;
+                case SDLK_SPACE:
+                theGearboyCore->KeyReleased(Select_Key);
+                break;
+                case SDLK_RETURN:
+                theGearboyCore->KeyReleased(Start_Key);
+                break;
+                default:
+                break;
+            }
+        }
+    }
+
+    theGearboyCore->RunToVBlank(NULL); // this is to force 30 FPS
+    theGearboyCore->RunToVBlank(theFrameBuffer);
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 160, 144, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*) theFrameBuffer);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     eglSwapBuffers(display, surface);
 }
 
-void update(void)
+void init_sdl(void)
 {
-    theGearboyCore->RunToVBlank(NULL);
-    theGearboyCore->RunToVBlank(NULL);
-    theGearboyCore->RunToVBlank(theFrameBuffer);
-
-    for (int y = 0; y < GAMEBOY_HEIGHT; ++y)
+    if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
-        int y_offset_tex = y * 256;
-        int y_offset_gb = y * GAMEBOY_WIDTH;
-        for (int x = 0; x < GAMEBOY_WIDTH; ++x)
-        {
-            int tex_offset = y_offset_tex + x;
-            int buff_offset = y_offset_gb + x;
-            theTexture[tex_offset].red = theFrameBuffer[buff_offset].red;
-            theTexture[tex_offset].green = theFrameBuffer[buff_offset].green;
-            theTexture[tex_offset].blue = theFrameBuffer[buff_offset].blue;
-        }
+        Log("SDL Error Init: %s", SDL_GetError());
+    }
+
+    if (SDL_SetVideoMode(0, 0, 32, SDL_SWSURFACE) == NULL)
+    {
+        Log("SDL Error Video: %s", SDL_GetError());
     }
 }
 
@@ -184,7 +252,7 @@ void init_ogl(void)
 
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, theGBTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 256, 0, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid*) theTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 256, 256, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*) NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
@@ -217,10 +285,8 @@ void init(void)
 {
     theGearboyCore = new GearboyCore();
     theGearboyCore->Init();
-    theGearboyCore->EnableSound(false);
 
     theFrameBuffer = new GB_Color[GAMEBOY_WIDTH * GAMEBOY_HEIGHT];
-    theTexture = new Tex_Color[256 * 256];
 
     for (int y = 0; y < GAMEBOY_HEIGHT; ++y)
     {
@@ -232,39 +298,66 @@ void init(void)
         }
     }
 
-    for (int y = 0; y < 256; ++y)
-    {
-        for (int x = 0; x < 256; ++x)
-        {
-            int pixel = (y * 256) + x;
-            theTexture[pixel].red = theTexture[pixel].green = theTexture[pixel].blue = 0x00;
-        }
-    }
-
-    for (int i = 0; i < 256; i++)
-    	keys[i] = false;
-
+    bcm_host_init();
+    init_sdl();
     init_ogl();
 }
 
+void end(void)
+{
+    SafeDeleteArray(theFrameBuffer);
+    SafeDelete(theGearboyCore);
+    SDL_Quit();
+    bcm_host_deinit();
+}
 
 int main(int argc, char** argv)
 {
-    bcm_host_init();
+    if (argc < 2 || argc > 4)
+    {
+        printf("usage: %s rom_path [options]\n", argv[0]);
+        printf("options:\n-nosound\n-forcedmg\n");
+        return -1;
+    }
 
     init();
 
-    if (theGearboyCore->LoadROM(argv[1], false))
+    bool forcedmg = false;
+
+    if (argc > 2)
     {
-        while (!terminate)
+        for (int i = 2; i < argc; i++)
         {
-          update();
-          draw();
+            if (strcmp("-nosound", argv[i]) == 0)
+            {
+                theGearboyCore->EnableSound(false);
+            }
+            else if (strcmp("-forcedmg", argv[i]) == 0)
+            {
+                forcedmg = true;
+            }
+            else
+            {
+                end();
+                printf("invalid option: %s\n", argv[i]);
+                return -1;
+            }
         }
     }
 
-    SafeDeleteArray(theFrameBuffer);
-    SafeDelete(theGearboyCore);
+    if (theGearboyCore->LoadROM(argv[1], forcedmg))
+    {
+        theGearboyCore->LoadRam();
+
+        while (running)
+        {
+            update();
+        }
+
+        theGearboyCore->SaveRam();
+    }
+
+    end();
 
     return 0;
 }

@@ -151,15 +151,7 @@
 {
     NSString* rom = [[self.sections valueForKey:[[[self.sections allKeys] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] objectAtIndex:indexPath.section]] objectAtIndex:indexPath.row];
     
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
-	    if (!self.detailViewController) {
-	        self.detailViewController = [[DetailViewController alloc] initWithNibName:@"DetailViewController_iPhone" bundle:nil];
-	    }
-	    self.detailViewController.detailItem = rom;
-        [self.navigationController pushViewController:self.detailViewController animated:YES];
-    } else {
-        self.detailViewController.detailItem = rom;
-    }
+    [self loadWithROM:rom];
 }
 
 - (void)viewDidAppear:(BOOL)animated
@@ -170,6 +162,19 @@
 - (void)viewWillDisappear:(BOOL)animated
 {
     [self.detailViewController.theGLViewController.theEmulator resume];
+}
+
+- (void)loadWithROM:(NSString *)rom
+{
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
+	    if (!self.detailViewController) {
+	        self.detailViewController = [[DetailViewController alloc] initWithNibName:@"DetailViewController_iPhone" bundle:nil];
+	    }
+	    self.detailViewController.detailItem = rom;
+        [self.navigationController pushViewController:self.detailViewController animated:YES];
+    } else {
+        self.detailViewController.detailItem = rom;
+    }
 }
 
 @end
