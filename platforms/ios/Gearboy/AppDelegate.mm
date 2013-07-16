@@ -91,8 +91,6 @@
 
 -(BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation
 {
-    NSLog(@"open file %@", url);
-    
     if (url != nil && [url isFileURL])
     {
         NSString *documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
@@ -102,18 +100,15 @@
         NSString* srcPath = [url path];
         NSString* destPath = [NSString stringWithFormat:@"%@/%@", documentsDirectory, [srcPath lastPathComponent]];
         
-        NSLog(@"srcPath %@", srcPath);
-        NSLog(@"destPath %@", destPath);
-
-        
         if ([fileManager copyItemAtPath:srcPath toPath:destPath error:&error])
         {
+            [masterViewController reloadTableView];
             [masterViewController loadWithROM:[[url path] lastPathComponent]];
                 
             return YES;
         }
         
-        NSLog(@"%@", [error localizedDescription]);
+        NSLog(@"ERROR %@", [error localizedDescription]);
     }
     
     return NO;

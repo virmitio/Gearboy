@@ -23,7 +23,6 @@
 
 @interface MasterViewController : UITableViewController
 {
-    NSArray* listData;
     NSMutableDictionary *sections;  
 }
 
@@ -31,6 +30,7 @@
 @property (strong, nonatomic) NSArray *listData;
 @property (strong, nonatomic) NSMutableDictionary *sections;
 
--(void)loadWithROM:(NSString *)rom;
+- (void)reloadTableView;
+- (void)loadWithROM:(NSString *)rom;
 
 @end

@@ -23,7 +23,6 @@
 
 @implementation MasterViewController
 
-@synthesize listData;
 @synthesize sections = _sections;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
@@ -42,7 +41,25 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
+    [self reloadTableView];
+}
+
+- (void)viewDidUnload
+{
+    [super viewDidUnload];
+}
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+{
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
+        return (interfaceOrientation == UIInterfaceOrientationPortrait) || (interfaceOrientation == UIInterfaceOrientationPortraitUpsideDown);
+    } else {
+        return (interfaceOrientation == UIInterfaceOrientationPortrait) || (interfaceOrientation == UIInterfaceOrientationPortraitUpsideDown);
+    }
+}
+
+- (void)reloadTableView
+{
     NSArray *files = nil;
     
     NSFileManager *fileManager = [[NSFileManager alloc] init];
@@ -54,12 +71,11 @@
         files = [dirContents filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"pathExtension IN %@", extensions]];
     }
     
-    self.listData = files;    
     self.sections = [[NSMutableDictionary alloc] init];
     
     BOOL found;
     
-    for (NSString* rom in self.listData)
+    for (NSString* rom in files)
     {
         NSString* c = [[rom substringToIndex:1] uppercaseString];
         
@@ -79,23 +95,28 @@
         }
     }
     
-    for (NSString* rom in self.listData)
+    for (NSString* rom in files)
     {
         [[self.sections objectForKey:[[rom substringToIndex:1] uppercaseString]] addObject:rom];
     }
+    
+    [self.tableView reloadData];
 }
 
-- (void)viewDidUnload
-{
-    [super viewDidUnload];
-}
-
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+- (void)loadWithROM:(NSString *)rom
 {
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
-        return (interfaceOrientation == UIInterfaceOrientationPortrait) || (interfaceOrientation == UIInterfaceOrientationPortraitUpsideDown);
+	    if (!self.detailViewController) {
+	        self.detailViewController = [[DetailViewController alloc] initWithNibName:@"DetailViewController_iPhone" bundle:nil];
+	    }
+	    self.detailViewController.detailItem = rom;
+        
+        if (self.navigationController.topViewController != self.detailViewController)
+        {
+            [self.navigationController pushViewController:self.detailViewController animated:YES];
+        }
     } else {
-        return (interfaceOrientation == UIInterfaceOrientationPortrait) || (interfaceOrientation == UIInterfaceOrientationPortraitUpsideDown);
+        self.detailViewController.detailItem = rom;
     }
 }
 
@@ -144,7 +165,60 @@
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return NO;
+    return YES;
+}
+
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if (editingStyle == UITableViewCellEditingStyleDelete)
+    {
+        NSString* rom = [[self.sections valueForKey:[[[self.sections allKeys] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] objectAtIndex:indexPath.section]] objectAtIndex:indexPath.row];
+        
+        NSString *documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+        NSError* error;
+        NSFileManager *fileManager = [[NSFileManager alloc] init];
+        
+        NSString* deletePath = [NSString stringWithFormat:@"%@/%@", documentsDirectory, rom];
+        
+        if ([fileManager removeItemAtPath:deletePath error:&error])
+        {        
+            [tableView beginUpdates];
+            
+            [[self.sections objectForKey:[[rom substringToIndex:1] uppercaseString]] removeObject:rom];
+        
+            if ([[self.sections objectForKey:[[rom substringToIndex:1] uppercaseString]] count] > 0)
+            {
+                [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationFade];
+            }
+            else
+            {
+                [self.sections removeObjectForKey:[[rom substringToIndex:1] uppercaseString]];
+
+                [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationFade];
+                [tableView deleteSections:[NSIndexSet indexSetWithIndex:indexPath.section]withRowAnimation:UITableViewRowAnimationFade];
+            }
+        
+            [tableView endUpdates];
+        }
+        else
+        {
+            NSLog(@"ERROR %@", [error localizedDescription]);
+        }
+        
+        
+        //[self.dataArray removeObjectAtIndex:indexPath.row];
+        //[controller removeObjectFromListAtIndex:indexPath.row];
+        //[tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationFade];
+        
+            
+        //NSString* rom = [[self.sections valueForKey:[[[self.sections allKeys] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] objectAtIndex:indexPath.section]] objectAtIndex:indexPath.row];
+        
+        //NSLog(@"%@", rom);
+        
+        //[[self.sections objectForKey:[[rom substringToIndex:1] uppercaseString]] removeObject:rom];
+        
+        [tableView reloadData];
+    }
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
@@ -162,19 +236,6 @@
 - (void)viewWillDisappear:(BOOL)animated
 {
     [self.detailViewController.theGLViewController.theEmulator resume];
-}
-
-- (void)loadWithROM:(NSString *)rom
-{
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
-	    if (!self.detailViewController) {
-	        self.detailViewController = [[DetailViewController alloc] initWithNibName:@"DetailViewController_iPhone" bundle:nil];
-	    }
-	    self.detailViewController.detailItem = rom;
-        [self.navigationController pushViewController:self.detailViewController animated:YES];
-    } else {
-        self.detailViewController.detailItem = rom;
-    }
 }
 
 @end
