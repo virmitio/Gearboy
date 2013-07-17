@@ -93,12 +93,11 @@
 {
     if (url != nil && [url isFileURL])
     {
-        NSString *documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
         NSError* error;
         NSFileManager *fileManager = [[NSFileManager alloc] init];
         
         NSString* srcPath = [url path];
-        NSString* destPath = [NSString stringWithFormat:@"%@/%@", documentsDirectory, [srcPath lastPathComponent]];
+        NSString* destPath = [NSString stringWithFormat:@"%@/%@", @"/var/mobile/Media/ROMs/GAMEBOY", [srcPath lastPathComponent]];
         
         if ([fileManager copyItemAtPath:srcPath toPath:destPath error:&error])
         {
