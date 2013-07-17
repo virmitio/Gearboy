@@ -174,11 +174,10 @@
     {
         NSString* rom = [[self.sections valueForKey:[[[self.sections allKeys] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] objectAtIndex:indexPath.section]] objectAtIndex:indexPath.row];
         
-        NSString *documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
         NSError* error;
         NSFileManager *fileManager = [[NSFileManager alloc] init];
         
-        NSString* deletePath = [NSString stringWithFormat:@"%@/%@", documentsDirectory, rom];
+        NSString* deletePath = [NSString stringWithFormat:@"%@/%@", @"/var/mobile/Media/ROMs/GAMEBOY", rom];
         
         if ([fileManager removeItemAtPath:deletePath error:&error])
         {        
