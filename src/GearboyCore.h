@@ -88,6 +88,9 @@ private:
     GB_Color m_DMGPalette[4];
     bool m_bForceDMG;
     int m_bRTCUpdateCount;
+    bool m_bDuringBootROM;
+    bool m_bLoadRamPending;
+    char m_szLoadRamPendingPath[512];
 };
 
 #endif	/* CORE_H */

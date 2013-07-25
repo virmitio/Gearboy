@@ -59,9 +59,9 @@ u8 MBC1MemoryRule::PerformRead(u16 address)
                     if ((m_pCartridge->GetRAMSize() == 1) && (address >= 0xA800))
                     {
                         // only 2KB of ram
-                        Log("--> ** Attempting to read from non usable address %X", address);
+                        Log("--> ** Attempting to read from invalid RAM %X", address);
                     }
-                    return m_pMemory->Retrieve(address);
+                    return m_pRAMBanks[address - 0xA000];
                 }
                 else
                     return m_pRAMBanks[(address - 0xA000) + m_CurrentRAMAddress];
@@ -151,10 +151,10 @@ void MBC1MemoryRule::PerformWrite(u16 address, u8 value)
                     if ((m_pCartridge->GetRAMSize() == 1) && (address >= 0xA800))
                     {
                         // only 2KB of ram
-                        Log("--> ** Attempting to write on non usable address %X %X", address, value);
+                        Log("--> ** Attempting to write on invalid RAM %X %X", address, value);
                     }
 
-                    m_pMemory->Load(address, value);
+                    m_pRAMBanks[address - 0xA000] = value;
                 }
                 else
                     m_pRAMBanks[(address - 0xA000) + m_CurrentRAMAddress] = value;
@@ -190,57 +190,47 @@ void MBC1MemoryRule::Reset(bool bCGB)
 void MBC1MemoryRule::SaveRam(std::ofstream &file)
 {
     Log("MBC1MemoryRule save RAM...");
+    Log("MBC1MemoryRule saving %d banks...", m_pCartridge->GetRAMBankCount());
+    
+    u32 ramSize = m_pCartridge->GetRAMBankCount() * 0x2000;
 
-    u8 mode = m_iMode;
-    file.write(reinterpret_cast<const char*> (&mode), 1);
-
-    Log("MBC1MemoryRule save RAM mode %d", mode);
-
-    for (int i = 0; i < kMBC1RamBanksSize; i++)
+    for (u32 i = 0; i < ramSize; i++)
     {
-        u8 ram_byte = 0;
-        if ((m_iMode == 0) && (i < 0x2000))
-        {
-            ram_byte = m_pMemory->Retrieve(0xA000 + i);
-        }
-        else
-        {
-            ram_byte = m_pRAMBanks[i];
-        }
+        u8 ram_byte = m_pRAMBanks[i];
         file.write(reinterpret_cast<const char*> (&ram_byte), 1);
     }
 
     Log("MBC1MemoryRule save RAM done");
 }
 
-void MBC1MemoryRule::LoadRam(std::ifstream &file)
+bool MBC1MemoryRule::LoadRam(std::ifstream &file, s32 fileSize)
 {
     Log("MBC1MemoryRule load RAM...");
+    Log("MBC1MemoryRule loading %d banks...", m_pCartridge->GetRAMBankCount());
 
-    u8 mode;
-    file.read(reinterpret_cast<char*> (&mode), 1);
+    s32 ramSize = m_pCartridge->GetRAMBankCount() * 0x2000;
 
-    Log("MBC1MemoryRule load RAM mode %d", mode);
+    if ((fileSize > 0) && (fileSize != ramSize))
+    {
+        Log("MBC1MemoryRule incorrect size. Expected: %d Found: %d", ramSize, fileSize);
+        return false;
+    }
+    else if (fileSize == 0)
+    {
+        // compatibility with old saves
+        u8 mode;
+        file.read(reinterpret_cast<char*> (&mode), 1);
+        Log("MBC1MemoryRule load RAM mode %d", mode);
+    }
 
-    for (int i = 0; i < kMBC1RamBanksSize; i++)
+    for (s32 i = 0; i < ramSize; i++)
     {
         u8 ram_byte = 0;
         file.read(reinterpret_cast<char*> (&ram_byte), 1);
-
-        if ((mode == 0) && (i < 0x2000))
-        {
-            m_pMemory->Load(0xA000 + i, ram_byte);
-        }
-        else
-        {
-            m_pRAMBanks[i] = ram_byte;
-        }
+        m_pRAMBanks[i] = ram_byte;
     }
 
     Log("MBC1MemoryRule load RAM done");
-}
-
-int MBC1MemoryRule::GetRamBanksSize()
-{
-    return kMBC1RamBanksSize + 1;
+    
+    return true;
 }

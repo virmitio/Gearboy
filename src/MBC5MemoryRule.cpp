@@ -101,7 +101,7 @@ void MBC5MemoryRule::PerformWrite(u16 address, u8 value)
         }
         case 0x6000:
         {
-            Log("--> ** Attempting to write on non usable address %X %X", address, value);
+            Log("--> ** Attempting to write on invalid address %X %X", address, value);
             break;
         }
         case 0xA000:
@@ -140,22 +140,33 @@ void MBC5MemoryRule::Reset(bool bCGB)
 void MBC5MemoryRule::SaveRam(std::ofstream & file)
 {
     Log("MBC5MemoryRule save RAM...");
+    Log("MBC5MemoryRule saving %d banks...", m_pCartridge->GetRAMBankCount());
+    
+    s32 ramSize = m_pCartridge->GetRAMBankCount() * 0x2000;
 
-    for (int i = 0; i < 0x20000; i++)
+    for (s32 i = 0; i < ramSize; i++)
     {
-        u8 ram_byte = 0;
-        ram_byte = m_pRAMBanks[i];
+        u8 ram_byte = m_pRAMBanks[i];
         file.write(reinterpret_cast<const char*> (&ram_byte), 1);
     }
 
     Log("MBC5MemoryRule save RAM done");
 }
 
-void MBC5MemoryRule::LoadRam(std::ifstream & file)
+bool MBC5MemoryRule::LoadRam(std::ifstream & file, s32 fileSize)
 {
     Log("MBC5MemoryRule load RAM...");
+    Log("MBC5MemoryRule loading %d banks...", m_pCartridge->GetRAMBankCount());
 
-    for (int i = 0; i < 0x20000; i++)
+    s32 ramSize = m_pCartridge->GetRAMBankCount() * 0x2000;
+
+    if ((fileSize > 0) && (fileSize != ramSize))
+    {
+        Log("MBC5MemoryRule incorrect size. Expected: %d Found: %d", ramSize, fileSize);
+        return false;
+    }
+
+    for (s32 i = 0; i < ramSize; i++)
     {
         u8 ram_byte = 0;
         file.read(reinterpret_cast<char*> (&ram_byte), 1);
@@ -163,10 +174,6 @@ void MBC5MemoryRule::LoadRam(std::ifstream & file)
     }
 
     Log("MBC5MemoryRule load RAM done");
+    
+    return true;
 }
-
-int MBC5MemoryRule::GetRamBanksSize()
-{
-    return 0x20000;
-}
-
