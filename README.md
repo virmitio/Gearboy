@@ -18,10 +18,10 @@ If you want new features ask for them but don't forget donating, thanks :)
 
 Downloads
 --------
-- iOS 1.3 Jailbroken: [Cydia](http://modmyi.com/info/gearboygameboy.d.php). You can open rom files from other apps like Safari or Dropbox.
-- iOS 1.3 Non-Jailbroken: Use your developer certificate to compile and install it, then use [iTunes file sharing](http://support.apple.com/kb/ht4094) to transfer roms. 
-- Windows 0.8: [Gearboy-0.8-Windows.zip](http://www.geardome.com/files/gearboy/Gearboy-0.8-Windows.zip)
-- Linux 0.8: [Gearboy-0.8-Linux.tar.gz](http://www.geardome.com/files/gearboy/Gearboy-0.8-Linux.tar.gz)
+- Gearboy 1.3 for Jailbroken iOS: [Cydia](http://modmyi.com/info/gearboygameboy.d.php). You can open rom files from other apps like Safari or Dropbox.
+- Gearboy 1.3 for Non-Jailbroken iOS: Use your developer certificate to compile and install it, then you can open rom files from other apps or use [iTunes file sharing](http://support.apple.com/kb/ht4094). 
+- Gearboy 0.8 for Windows: [Gearboy-0.8-Windows.zip](http://www.geardome.com/files/gearboy/Gearboy-0.8-Windows.zip)
+- Gearboy 0.8 for Linux: [Gearboy-0.8-Linux.tar.gz](http://www.geardome.com/files/gearboy/Gearboy-0.8-Linux.tar.gz)
 
 Features
 --------
@@ -39,8 +39,7 @@ Features
 
 Todo List
 -----------
-- iOS landscape mode.
-- Saving and loading game states.
+- Saving and loading game states (only desktop).
 - Pixel precision scan line timing (https://gist.github.com/3730564).
 - Debugger.
 
