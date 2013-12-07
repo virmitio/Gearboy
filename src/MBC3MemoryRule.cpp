@@ -389,4 +389,3 @@ void MBC3MemoryRule::UpdateRTC()
         m_RTCLastTime = now;
     }
 }
-
